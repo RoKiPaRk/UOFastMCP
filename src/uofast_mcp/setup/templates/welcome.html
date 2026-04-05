@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if already_configured %}
+<!-- Already configured notice -->
+<div class="text-center mb-4">
+  <i class="fa-solid fa-circle-check fa-3x text-success mb-3"></i>
+  <h4 class="fw-bold">Server Already Configured</h4>
+</div>
+
+<div class="alert alert-warning">
+  <i class="fa fa-triangle-exclamation me-2"></i>
+  <strong>Setup has already been completed.</strong>
+  The security database exists and an admin user is present.
+  The setup wizard cannot run again without first removing
+  <code>data/security.db</code>.
+</div>
+
+<div class="d-grid gap-2">
+  <a href="/admin" class="btn btn-primary btn-lg">
+    <i class="fa fa-shield-halved me-2"></i>Open Admin UI
+  </a>
+  <a href="/docs" class="btn btn-outline-secondary">
+    <i class="fa fa-book me-2"></i>API Documentation
+  </a>
+</div>
+
+{% else %}
+<!-- Welcome -->
+<div class="text-center mb-4">
+  <i class="fa-solid fa-server fa-3x text-primary mb-3"></i>
+  <h4 class="fw-bold">Welcome to UOFast MCP Server Setup</h4>
+  <p class="text-muted">
+    This wizard will configure your server in 3 quick steps:<br>
+    security credentials, UniData connection, and initial database setup.
+  </p>
+</div>
+
+<!-- Prerequisites -->
+<h6 class="fw-semibold mb-2">Prerequisites</h6>
+<ul class="list-group mb-4">
+  {% for p in prereqs %}
+  <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+    <span>{{ p.label }}
+      {% if not p.ok and p.note %}
+      <br><small class="text-muted">{{ p.note }}</small>
+      {% endif %}
+    </span>
+    {% if p.ok %}
+      <span class="badge bg-success"><i class="fa fa-check"></i> OK</span>
+    {% else %}
+      <span class="badge bg-danger">Missing</span>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+
+{% if not all_ok %}
+<div class="alert alert-danger py-2">
+  <i class="fa fa-circle-xmark me-1"></i>
+  Please resolve the issues above before continuing.
+</div>
+{% endif %}
+
+<div class="d-grid">
+  <a href="/setup/security"
+     class="btn btn-primary btn-lg {% if not all_ok %}disabled{% endif %}">
+    Start Setup <i class="fa fa-arrow-right ms-1"></i>
+  </a>
+</div>
+
+{% endif %}
+
+{% endblock %}

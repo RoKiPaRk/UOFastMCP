@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h5 class="fw-bold mb-1">Security Settings</h5>
+<p class="text-muted mb-4">Generate an application secret and create the initial admin account.</p>
+
+<form method="POST" action="/setup/security" id="secForm" novalidate>
+
+  <!-- Application Secret Key -->
+  <div class="mb-4">
+    <label class="form-label fw-semibold">Application Secret Key</label>
+    <div class="input-group">
+      <input type="text" name="jwt_secret" id="jwtSecret"
+             class="form-control font-mono {% if errors.jwt_secret %}is-invalid{% endif %}"
+             value="{{ jwt_secret }}" required autocomplete="off">
+      <button type="button" class="btn btn-outline-secondary"
+              onclick="copyText(document.getElementById('jwtSecret').value, this)"
+              title="Copy to clipboard">
+        <i class="fa fa-copy"></i>
+      </button>
+      <button type="button" class="btn btn-outline-secondary"
+              onclick="regenerateSecret()" title="Generate new secret">
+        <i class="fa fa-arrows-rotate"></i>
+      </button>
+    </div>
+    {% if errors.jwt_secret %}
+    <div class="invalid-feedback d-block">{{ errors.jwt_secret }}</div>
+    {% endif %}
+    <div class="form-text">
+      Auto-generated 32-byte hex key. Used for session encryption and credential storage.
+      <strong>Save this value</strong> — you'll need it as the <code>JWT_SECRET_KEY</code> environment variable.
+    </div>
+  </div>
+
+  <!-- Admin Username -->
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Admin Username</label>
+    <input type="text" name="admin_username"
+           class="form-control"
+           value="{{ form.get('admin_username', 'admin') }}"
+           required autocomplete="username">
+  </div>
+
+  <!-- Admin Email -->
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Admin Email</label>
+    <input type="email" name="admin_email"
+           class="form-control {% if errors.admin_email %}is-invalid{% endif %}"
+           value="{{ form.get('admin_email', '') }}"
+           placeholder="admin@yourcompany.com"
+           required autocomplete="email">
+    {% if errors.admin_email %}
+    <div class="invalid-feedback">{{ errors.admin_email }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Admin Password -->
+  <div class="row g-3 mb-1">
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Admin Password</label>
+      <input type="password" name="admin_password" id="pw1"
+             class="form-control {% if errors.admin_password %}is-invalid{% endif %}"
+             minlength="10" required autocomplete="new-password">
+      <div class="form-text">Minimum 10 characters.</div>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Confirm Password</label>
+      <input type="password" name="admin_password_confirm" id="pw2"
+             class="form-control" required autocomplete="new-password">
+    </div>
+  </div>
+  {% if errors.admin_password %}
+  <div class="alert alert-danger py-2 mb-3">
+    <i class="fa fa-circle-exclamation me-1"></i>{{ errors.admin_password }}
+  </div>
+  {% else %}
+  <div class="mb-4"></div>
+  {% endif %}
+
+  <div class="d-flex gap-2">
+    <a href="/setup/welcome" class="btn btn-outline-secondary">
+      <i class="fa fa-arrow-left me-1"></i> Back
+    </a>
+    <button type="submit" class="btn btn-primary flex-grow-1">
+      Next: UniData Connection <i class="fa fa-arrow-right ms-1"></i>
+    </button>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Client-side password match check
+document.getElementById('secForm').addEventListener('submit', function(e) {
+  const p1 = document.getElementById('pw1').value;
+  const p2 = document.getElementById('pw2').value;
+  if (p1 !== p2) {
+    e.preventDefault();
+    document.getElementById('pw2').classList.add('is-invalid');
+    document.getElementById('pw2').setCustomValidity('Passwords do not match');
+    alert('Passwords do not match. Please re-enter.');
+  }
+});
+document.getElementById('pw2').addEventListener('input', function() {
+  this.classList.remove('is-invalid');
+  this.setCustomValidity('');
+});
+
+function regenerateSecret() {
+  const arr = new Uint8Array(32);
+  window.crypto.getRandomValues(arr);
+  const hex = Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+  document.getElementById('jwtSecret').value = hex;
+}
+</script>
+{% endblock %}

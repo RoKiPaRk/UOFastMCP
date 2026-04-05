@@ -1,0 +1,28 @@
+uopy
+uofast-orm
+mcp
+streamlit
+requests
+PyPDF2
+python-docx
+sentence-transformers
+chromadb
+numpy
+# HTTP transport & API
+fastapi
+uvicorn
+python-multipart
+itsdangerous
+jinja2
+# Auth & security
+python-jose[cryptography]
+bcrypt
+# Database (security/audit store)
+sqlalchemy[asyncio]
+aiosqlite
+# Config validation
+pydantic
+pydantic-settings
+pyyaml
+# Admin UI
+sqladmin

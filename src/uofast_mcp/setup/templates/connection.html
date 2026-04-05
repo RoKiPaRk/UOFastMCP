@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h5 class="fw-bold mb-1">UniData Connection</h5>
+<p class="text-muted mb-4">
+  Configure your U2 UniData/UniVerse server connection.
+  This will be saved to <code>unidata_config.ini</code>.
+</p>
+
+<form method="POST" action="/setup/connection" id="connForm">
+
+  <!-- Row: Connection Name + Port -->
+  <div class="row g-3 mb-3">
+    <div class="col-8">
+      <label class="form-label fw-semibold">Connection Name</label>
+      <input type="text" name="conn_name"
+             class="form-control"
+             value="{{ form.get('conn_name', 'production') }}"
+             placeholder="production" required>
+      <div class="form-text">Identifier for this connection (e.g. production, test).</div>
+    </div>
+    <div class="col-4">
+      <label class="form-label fw-semibold">Port</label>
+      <input type="number" name="conn_port"
+             class="form-control {% if errors.conn_port %}is-invalid{% endif %}"
+             value="{{ form.get('conn_port', '31438') }}"
+             min="1" max="65535" required>
+      {% if errors.conn_port %}
+      <div class="invalid-feedback">{{ errors.conn_port }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Host -->
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Host / IP Address</label>
+    <input type="text" name="conn_host" id="fHost"
+           class="form-control {% if errors.conn_host %}is-invalid{% endif %}"
+           value="{{ form.get('conn_host', '') }}"
+           placeholder="192.168.1.100" required>
+    {% if errors.conn_host %}
+    <div class="invalid-feedback">{{ errors.conn_host }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Username + Password -->
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Username</label>
+      <input type="text" name="conn_username" id="fUser"
+             class="form-control {% if errors.conn_username %}is-invalid{% endif %}"
+             value="{{ form.get('conn_username', '') }}" required autocomplete="username">
+      {% if errors.conn_username %}
+      <div class="invalid-feedback">{{ errors.conn_username }}</div>
+      {% endif %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Password</label>
+      <input type="password" name="conn_password" id="fPass"
+             class="form-control" autocomplete="current-password">
+    </div>
+  </div>
+
+  <!-- Account Path -->
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Account Path</label>
+    <input type="text" name="conn_account" id="fAccount"
+           class="form-control {% if errors.conn_account %}is-invalid{% endif %}"
+           value="{{ form.get('conn_account', '') }}"
+           placeholder="C:\U2\UD83\DEMO" required>
+    {% if errors.conn_account %}
+    <div class="invalid-feedback">{{ errors.conn_account }}</div>
+    {% endif %}
+    <div class="form-text">Full path to the U2 account directory on the server.</div>
+  </div>
+
+  <!-- Service + Auto-connect -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Service Name</label>
+      <input type="text" name="conn_service" id="fService"
+             class="form-control"
+             value="{{ form.get('conn_service', 'udcs') }}"
+             placeholder="udcs">
+    </div>
+    <div class="col-md-6 d-flex align-items-end">
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox"
+               name="conn_auto_connect" id="autoConn"
+               {% if form.get('conn_auto_connect', True) %}checked{% endif %}>
+        <label class="form-check-label fw-semibold" for="autoConn">
+          Auto-connect on startup
+        </label>
+        <div class="form-text">Connect automatically when the server starts.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pool Settings accordion -->
+  <div class="accordion mb-4" id="poolAccordion">
+    <div class="accordion-item border rounded">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2 fw-semibold" type="button"
+                data-bs-toggle="collapse" data-bs-target="#poolSettings"
+                aria-expanded="false" aria-controls="poolSettings">
+          <i class="fa fa-sliders me-2 text-muted"></i>Pool &amp; Server Settings
+          <span class="ms-2 badge bg-light text-muted fw-normal" style="font-size:.75rem">optional</span>
+        </button>
+      </h2>
+      <div id="poolSettings" class="accordion-collapse collapse" data-bs-parent="#poolAccordion">
+        <div class="accordion-body pt-2 pb-3">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Min Connections</label>
+              <input type="number" name="pool_min" class="form-control"
+                     value="{{ form.get('pool_min', '1') }}" min="0" max="20">
+              <div class="form-text">Connections kept open at startup.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Max Connections</label>
+              <input type="number" name="pool_max" class="form-control"
+                     value="{{ form.get('pool_max', '5') }}" min="1" max="100">
+              <div class="form-text">Maximum pool size per connection.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Log Level</label>
+              <select name="log_level" class="form-select">
+                {% for lvl in ["DEBUG", "INFO", "WARNING", "ERROR"] %}
+                <option value="{{ lvl }}"
+                  {% if form.get('log_level', 'INFO') == lvl %}selected{% endif %}>
+                  {{ lvl }}
+                </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Server log verbosity.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Credentials security notice -->
+  <div class="alert alert-success py-2 mb-4 d-flex align-items-center gap-2">
+    <i class="fa fa-shield-halved flex-shrink-0 text-success"></i>
+    <div class="small">
+      <strong>Credentials encrypted before storage.</strong>
+      The password is encrypted with Fernet (AES-128-CBC) derived from your
+      <code>JWT_SECRET_KEY</code> before being written to <code>unidata_config.ini</code>.
+    </div>
+  </div>
+
+  <!-- Test connection result -->
+  <div id="testResult" class="alert mb-3"></div>
+
+  <!-- Test Connection button -->
+  <button type="button" class="btn btn-outline-secondary w-100 mb-4" id="testBtn"
+          onclick="testConnection()">
+    <i class="fa fa-plug me-1"></i> Test Connection
+  </button>
+
+  <!-- Navigation buttons -->
+  <div class="d-flex gap-2">
+    <a href="/setup/security" class="btn btn-outline-secondary">
+      <i class="fa fa-arrow-left me-1"></i> Back
+    </a>
+    <button type="submit" class="btn btn-primary flex-grow-1">
+      Save &amp; Continue <i class="fa fa-arrow-right ms-1"></i>
+    </button>
+    <button type="submit" name="skip" value="1" class="btn btn-outline-secondary">
+      Skip
+    </button>
+  </div>
+  <div class="text-center mt-2">
+    <small class="text-muted">
+      <i class="fa fa-circle-info me-1"></i>
+      "Skip" skips the connection config — you can set it up later via
+      <code>unidata_config.ini</code> or the Admin UI.
+    </small>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function testConnection() {
+  const btn = document.getElementById('testBtn');
+  const result = document.getElementById('testResult');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Testing...';
+  result.style.display = 'none';
+  result.className = 'alert mb-3';
+
+  const payload = {
+    host:     document.getElementById('fHost').value.trim(),
+    port:     document.querySelector('[name=conn_port]').value,
+    username: document.getElementById('fUser').value.trim(),
+    password: document.getElementById('fPass').value,
+    account:  document.getElementById('fAccount').value.trim(),
+    service:  document.getElementById('fService').value.trim() || 'udcs',
+  };
+
+  try {
+    const resp = await fetch('/setup/test-connection', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json();
+    result.classList.add(data.success ? 'alert-success' : 'alert-danger');
+    result.innerHTML = (data.success
+      ? '<i class="fa fa-circle-check me-1"></i>'
+      : '<i class="fa fa-circle-xmark me-1"></i>'
+    ) + data.message;
+    result.style.display = 'block';
+  } catch (err) {
+    result.classList.add('alert-danger');
+    result.innerHTML = '<i class="fa fa-circle-xmark me-1"></i> Request failed: ' + err.message;
+    result.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa fa-plug me-1"></i> Test Connection';
+}
+</script>
+{% endblock %}

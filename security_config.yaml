@@ -1,0 +1,47 @@
+# UOFast MCP Server — Security Configuration
+# All values can be overridden via environment variables.
+# Sensitive values MUST be set via env vars (never commit real secrets).
+
+jwt:
+  # Required: set JWT_SECRET_KEY env var in production
+  # For HS256 (dev/default): any long random string
+  # For RS256 (prod):        path to RSA private key PEM file
+  secret_key: "${JWT_SECRET_KEY}"
+  algorithm: "HS256"                  # HS256 (dev) | RS256 (prod)
+  access_token_expire_minutes: 60     # Override: JWT_EXPIRE_MINUTES
+
+database:
+  # SQLite for dev/Docker; set DATABASE_URL env var for PostgreSQL
+  url: "sqlite+aiosqlite:///./data/security.db"
+  # Override: DATABASE_URL=postgresql+asyncpg://user:pass@host/dbname
+
+# Initial admin user (created on first startup if no admin exists)
+initial_admin:
+  username: "admin"
+  email: "admin@localhost"
+  # Password MUST be set via env var: INITIAL_ADMIN_PASSWORD
+  # Default fallback "changeme123!" is for local dev only — CHANGE IT
+
+# Azure AD OAuth — stubbed for future phase
+azure_ad:
+  enabled: false
+  tenant_id: ""
+  client_id: ""
+  client_secret: ""                   # Set via AZURE_AD_CLIENT_SECRET env var
+  jwks_uri: ""                        # Auto-derived from tenant_id when enabled
+  # When enabled, valid Azure AD JWT tokens will be accepted alongside local JWTs
+  # Map Azure AD group IDs to local role names:
+  group_role_map: {}
+  # Example:
+  # group_role_map:
+  #   "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx": "admin"
+  #   "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy": "developer"
+
+# Admin UI session
+admin_ui:
+  session_expire_hours: 8
+
+# Logging
+logging:
+  level: "INFO"                       # DEBUG | INFO | WARNING | ERROR
+  audit_log_retention_days: 365       # Future: scheduled cleanup job
