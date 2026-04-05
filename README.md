@@ -1,27 +1,36 @@
-# UOFast MCP Server
+# UOFastMCP
 
-Enterprise Model Context Protocol (MCP) server for U2 UniData/UniVerse databases, with JWT authentication, role-based access control (RBAC), audit logging, and a web-based security admin UI.
+Enterprise Model Context Protocol (MCP) server for U2 UniData/UniVerse databases.
+Provides JWT authentication, role-based access control (RBAC), audit logging, and a web-based security admin UI.
 
-## What's New in v2
-
-| Feature | v1 (old) | v2 (current) |
-|---|---|---|
-| Transport | stdio (subprocess) | HTTP/SSE (network service) |
-| Authentication | None | JWT · API keys · HTTP Basic Auth |
-| Authorization | None | RBAC — per-tool permissions |
-| Audit logging | None | SQLite audit log of every tool call |
-| Admin UI | None | Web UI at `/admin` |
-| User self-service | None | Login page at `/auth/login` — get connection config instantly |
+**Developer:** [RokiPark](https://github.com/RokiPark/UOFastMCP) · **License:** MIT · **Python:** 3.11+
 
 ---
 
-## Quick Start (Local Dev)
+## Features
+
+| Feature | Detail |
+|---|---|
+| Transport | HTTP/SSE — works over a network, no subprocess needed |
+| Authentication | JWT · HTTP Basic Auth |
+| Authorization | RBAC — per-tool permissions enforced on every call |
+| Audit logging | SQLite log of every tool call (user, tool, params, status, IP, timestamp) |
+| Admin UI | Web UI at `/admin` — manage users, roles, permissions, audit logs |
+| User self-service | Login page at `/auth/login` — returns ready-to-use `claude mcp add` command |
+| Setup wizard | First-run wizard at `/setup` — guided configuration via browser |
+| ORM support | `uofast-orm` package — typed model classes for U2 files |
+
+---
+
+## Quick Start
 
 ### 1. Install
 
 ```bash
 pip install uofast-mcp
 # or from source:
+git clone https://github.com/RokiPark/UOFastMCP.git
+cd UOFastMCP
 pip install -e .
 ```
 
@@ -37,15 +46,23 @@ export JWT_SECRET_KEY=your-long-random-secret-here
 export INITIAL_ADMIN_PASSWORD=YourStrongPassword123!
 ```
 
-Generate a secure secret key:
+Generate a secure secret:
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-### 3. Start the server
+### 3. Configure your U2 connection
+
+Copy and edit the config file:
+```bash
+cp unidata_config.ini.example unidata_config.ini   # then fill in your host/credentials
+# or use environment variables — see Environment Variables section below
+```
+
+### 4. Start the server
 
 ```bash
-# via console script (after pip install):
+# via console script:
 uofast-mcp
 
 # or directly:
@@ -53,10 +70,10 @@ uvicorn uofast_mcp.app:app --reload --port 8000
 ```
 
 On first startup the server will:
-- Create `data/security.db` (SQLite database)
-- Seed default roles, permissions, and the admin user
+- Create `data/security.db` (SQLite)
+- Seed default roles, permissions, and the `admin` user
 
-### 4. Verify it's running
+### 5. Verify
 
 ```
 GET http://localhost:8000/health
@@ -68,27 +85,19 @@ Login with `admin` / `<INITIAL_ADMIN_PASSWORD>`
 
 ---
 
-## Connecting Clients
+## Connecting Claude
 
-1. **Log in** at **http://localhost:8000/auth/login** with your username and password
-2. **Copy** the `claude mcp add` command shown on the page
-3. **Run it** in your terminal — done
+### Quickest path — login page
+
+1. Open **http://localhost:8000/auth/login**
+2. Log in with your username and password
+3. Copy the `claude mcp add` command shown on the page and run it
 
 ```bash
-claude mcp add --transport sse unidata http://localhost:8000/sse --header "Authorization: Basic <your-basic-token>"
+claude mcp add --transport sse unidata http://localhost:8000/sse --header "Authorization: Basic <your-token>"
 ```
 
-One command, works on Windows/macOS/Linux. No config file editing needed.
-
-> **Manual config:** The login page also has a collapsible JSON config block you can paste into `claude_desktop_config.json` or VSCode MCP settings if you prefer.
-
----
-
-## User Setup
-
-### Quick path — Admin provisions the user (one step)
-
-The admin can create a user and get their ready-to-use CLI command in a single API call:
+### Admin provisions a user (one step)
 
 ```bash
 curl -X POST http://localhost:8000/auth/provision \
@@ -106,64 +115,92 @@ Response:
 }
 ```
 
-Send the `claude_command` value to the user — they run it and they're connected.
+Send the `claude_command` to the user — they run it once and are connected.
 
-### Alternative — Admin UI + self-service login
+---
 
-1. Open **http://localhost:8000/admin** → **Users → Create** → fill in username, email, role
-2. Tell the user to visit **http://localhost:8000/auth/login** and log in with their credentials
-3. The login page shows the `claude mcp add` command — user copies and runs it
+## MCP Tools (20 tools)
 
-### (Optional) API Keys for service accounts
+### Connection management
+| Tool | Description |
+|---|---|
+| `list_connections` | List all cached connections |
+| `add_connection` | Add a named connection to the cache |
+| `close_connection` | Close and remove a connection |
 
-For CI pipelines or long-lived integrations, generate an API key via the Admin UI (**Users → Generate API Token**) or REST API. API keys never expire unless you set a date.
+### File & record operations
+| Tool | Description |
+|---|---|
+| `list_files` | List files in the current U2 account |
+| `select_records` | SELECT records — returns matching IDs |
+| `read_record` | Read a record by ID (raw attribute array) |
+| `query_file` | Query a file and return full record data |
+| `read_record_with_fields` | Read named DICT fields from a record |
+| `write_record_with_fields` | Write named DICT fields to a record |
+
+### Dictionary (DICT) management
+| Tool | Description |
+|---|---|
+| `get_dict_items` | List DICT field definitions for a file |
+| `query_with_dict_fields` | Query a file returning specific DICT fields |
+| `read_dict_item` | Read a single DICT item definition |
+| `write_dict_item` | Create or overwrite a DICT item |
+| `update_dict_item` | Update an existing DICT item |
+| `delete_dict_item` | Delete a DICT item |
+
+### Commands & BP programs
+| Tool | Description |
+|---|---|
+| `execute_command` | Execute a UniQuery command (LIST, COUNT, SELECT, etc.) |
+| `read_bp_program` | Read UniBasic source code from a BP file |
+| `write_bp_program` | Write UniBasic source code to a BP file |
+| `compile_bp_program` | Compile a BP program — returns BASIC compiler output |
 
 ---
 
 ## Roles & Permissions
 
-### Pre-built Roles
+### Pre-built roles
 
 | Role | Permissions |
 |---|---|
 | `admin` | All permissions + admin UI access |
-| `developer` | Connections, files, records (read/write), DICT (read/write/delete), BP programs (read/write/compile), commands |
+| `developer` | Connections, files, records (read/write), DICT (read/write/delete), BP (read/write/compile), commands |
 | `analyst` | Connections (read), files (read), records (read), DICT (read), commands |
 | `readonly` | Connections (read), files (read), records (read), DICT (read) |
-| `service_account` | Same as readonly — customise as needed |
+| `service_account` | Same as readonly — customise via Admin UI |
 
-### Tool → Permission Mapping
+### Tool → permission mapping
 
-| Tool | Required Permission |
+| Permission | Tools |
 |---|---|
-| `list_connections` | `unidata.connection.read` |
-| `add_connection`, `close_connection` | `unidata.connection.manage` |
-| `list_files` | `unidata.files.read` |
-| `select_records`, `read_record`, `query_file`, `read_record_with_fields`, `get_dict_items`, `query_with_dict_fields` | `unidata.record.read` / `unidata.dict.read` |
-| `write_record_with_fields` | `unidata.record.write` |
-| `execute_command` | `unidata.command.execute` |
-| `read_dict_item` | `unidata.dict.read` |
-| `write_dict_item`, `update_dict_item` | `unidata.dict.write` |
-| `delete_dict_item` | `unidata.dict.delete` |
-| `read_bp_program` | `unidata.bp.read` |
-| `write_bp_program` | `unidata.bp.compile` |
-| `compile_bp_program` | `unidata.bp.compile` |
+| `unidata.connection.read` | `list_connections` |
+| `unidata.connection.manage` | `add_connection`, `close_connection` |
+| `unidata.files.read` | `list_files` |
+| `unidata.record.read` | `select_records`, `read_record`, `query_file`, `read_record_with_fields`, `query_with_dict_fields` |
+| `unidata.record.write` | `write_record_with_fields` |
+| `unidata.dict.read` | `get_dict_items`, `query_with_dict_fields`, `read_dict_item` |
+| `unidata.dict.write` | `write_dict_item`, `update_dict_item` |
+| `unidata.dict.delete` | `delete_dict_item` |
+| `unidata.command.execute` | `execute_command` |
+| `unidata.bp.read` | `read_bp_program` |
+| `unidata.bp.compile` | `write_bp_program`, `compile_bp_program` |
 
-### Customise Role Permissions
+### Customise via REST API
 
-**Via Admin UI:** Roles → select role → add/remove permissions
-
-**Via REST API:**
 ```bash
-# Add a permission to a role
+TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
+  -d "username=admin&password=YourAdminPassword" | jq -r .access_token)
+
+# Add permission to a role
 curl -X POST http://localhost:8000/admin/api/roles/<role-id>/permissions \
-  -H "Authorization: Bearer <admin-token>" \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"permission_key": "unidata.record.write"}'
 
-# Remove a permission
+# Remove permission
 curl -X DELETE http://localhost:8000/admin/api/roles/<role-id>/permissions/<permission-id> \
-  -H "Authorization: Bearer <admin-token>"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
@@ -174,12 +211,11 @@ Browse to **http://localhost:8000/admin** — login with admin credentials.
 
 | Section | What you can do |
 |---|---|
-| **Users** | Create, search, edit (role/status), deactivate users |
+| **Users** | Create, search, edit (role/status), deactivate |
 | **Roles** | Create roles, view assigned permissions |
 | **Permissions** | View all tool permissions |
 | **Role Permissions** | Assign/remove permissions from roles |
-| **API Tokens** | View active tokens, deactivate |
-| **Audit Logs** | Browse all tool calls, filter by user/tool/status; read-only |
+| **Audit Logs** | Browse all tool calls, filter by user/tool/status — read-only |
 
 ---
 
@@ -187,35 +223,30 @@ Browse to **http://localhost:8000/admin** — login with admin credentials.
 
 Every tool call is logged with: user, tool name, parameters (sanitised — passwords never stored), result status, timestamp, IP address.
 
-**View in Admin UI:** Audit Logs section
-
-**Via REST API:**
 ```bash
 # Recent logs
 curl http://localhost:8000/admin/api/audit-logs \
-  -H "Authorization: Bearer <admin-token>"
+  -H "Authorization: Bearer $TOKEN"
 
 # Filter by tool and status
 curl "http://localhost:8000/admin/api/audit-logs?tool_name=write_record_with_fields&result_status=denied" \
-  -H "Authorization: Bearer <admin-token>"
+  -H "Authorization: Bearer $TOKEN"
 
 # Export as CSV
 curl http://localhost:8000/admin/api/audit-logs/export \
-  -H "Authorization: Bearer <admin-token>" \
-  -o audit_logs.csv
+  -H "Authorization: Bearer $TOKEN" -o audit_logs.csv
 ```
 
 ---
 
-## U2 UniData Connection Configuration
+## U2 Connection Configuration
 
-Connection settings are loaded in this order:
+Settings are loaded in this order (first match wins per connection):
 
-1. **`unidata_config.ini`** (recommended — supports multiple named connections)
-2. **Environment variables** (single connection fallback)
-3. **`add_connection` tool** (on-demand from Claude)
+1. **`unidata_config.ini`** — supports multiple named connections (recommended)
+2. **Environment variables** — single connection fallback
 
-### INI config file
+### unidata_config.ini
 
 ```ini
 [server]
@@ -253,7 +284,7 @@ auto_connect = false
 | `UNIDATA_ACCOUNT` | Yes | — |
 | `UNIDATA_PORT` | No | `31438` |
 | `UNIDATA_SERVICE` | No | `udcs` |
-| `UNIDATA_MIN_CONNECTIONS` | No | `0` (no minimum) |
+| `UNIDATA_MIN_CONNECTIONS` | No | `0` |
 | `UNIDATA_MAX_CONNECTIONS` | No | `0` (unlimited) |
 
 ---
@@ -265,9 +296,9 @@ auto_connect = false
 | `JWT_SECRET_KEY` | **Yes** | JWT signing secret — keep long and random |
 | `INITIAL_ADMIN_PASSWORD` | **Yes (first run)** | Password for the seeded `admin` account |
 | `DATABASE_URL` | No | Defaults to `sqlite+aiosqlite:///./data/security.db` |
-| `JWT_ALGORITHM` | No | `HS256` (default) or `RS256` (production) |
-| `JWT_EXPIRE_MINUTES` | No | `60` (default) |
-| `ENABLE_DOCS` | No | `true` (default) — set `false` to hide `/docs` in production |
+| `JWT_ALGORITHM` | No | `HS256` (default) or `RS256` |
+| `JWT_EXPIRE_MINUTES` | No | `60` |
+| `ENABLE_DOCS` | No | `true` — set `false` to hide `/docs` in production |
 
 Copy `.env.example` to `.env` for a full template.
 
@@ -278,21 +309,20 @@ Copy `.env.example` to `.env` for a full template.
 | Endpoint | Method | Auth | Description |
 |---|---|---|---|
 | `/health` | GET | None | Health check |
-| `/sse` | GET | JWT / API Key / Basic Auth | MCP SSE connection |
-| `/messages` | POST | JWT / API Key / Basic Auth | MCP message handler |
-| `/auth/login` | GET/POST | None | **User login page** — returns ready-to-use connection configs |
-| `/auth/token` | POST | None | Get JWT token (`?username=&password=`) |
+| `/sse` | GET | JWT / Basic | MCP SSE connection |
+| `/messages` | POST | JWT / Basic | MCP message handler |
+| `/auth/login` | GET/POST | None | User login page — returns ready-to-use connection config |
+| `/auth/provision` | POST | Admin Basic | Create user + return their `claude mcp add` command |
 | `/admin` | GET | Admin session | Web admin UI |
 | `/admin/api/users` | GET/POST | Admin JWT | List / create users |
 | `/admin/api/users/{id}` | GET/PUT/DELETE | Admin JWT | Get / update / deactivate user |
 | `/admin/api/roles` | GET/POST | Admin JWT | List / create roles |
 | `/admin/api/roles/{id}/permissions` | POST/DELETE | Admin JWT | Assign / remove permissions |
 | `/admin/api/permissions` | GET | Admin JWT | List all permissions |
-| `/admin/api/users/{id}/api-tokens` | GET/POST | Admin JWT | List / create API tokens |
-| `/admin/api/api-tokens/{id}` | DELETE | Admin JWT | Revoke API token |
 | `/admin/api/audit-logs` | GET | Admin JWT | Query audit log |
 | `/admin/api/audit-logs/export` | GET | Admin JWT | Export audit log as CSV |
-| `/docs` | GET | None | Interactive API docs (Swagger UI) |
+| `/setup` | GET | None | First-run setup wizard |
+| `/docs` | GET | None | Swagger UI (disable via `ENABLE_DOCS=false`) |
 
 ---
 
@@ -301,18 +331,18 @@ Copy `.env.example` to `.env` for a full template.
 ```
 UOFastMCP/
 ├── src/uofast_mcp/
-│   ├── app.py                    # FastAPI factory — entry point
-│   ├── server.py                 # MCP tool definitions (24 tools)
+│   ├── app.py                    # FastAPI factory + SSE mount
+│   ├── server.py                 # MCP tool definitions (20 tools)
 │   ├── security/
 │   │   ├── models.py             # SQLAlchemy ORM models
-│   │   ├── database.py           # DB engine + seeder (create_all, no migrations)
-│   │   ├── auth.py               # JWT + API key + password helpers
-│   │   ├── rbac.py               # RBACEngine (permission checks)
+│   │   ├── database.py           # DB engine + seeder (create_all)
+│   │   ├── auth.py               # JWT + password helpers
+│   │   ├── rbac.py               # Permission enforcement
 │   │   ├── audit.py              # Audit logger
 │   │   ├── permissions.py        # Tool → permission mapping
 │   │   └── middleware.py         # FastAPI auth middleware
 │   ├── admin/
-│   │   ├── router.py             # Admin REST API
+│   │   ├── router.py             # Admin + auth REST API
 │   │   ├── schemas.py            # Pydantic request/response schemas
 │   │   └── ui.py                 # SQLAdmin web UI views
 │   ├── setup/
@@ -322,13 +352,13 @@ UOFastMCP/
 │   │   ├── connection_manager.py # U2 connection pooling
 │   │   └── uopy_operations.py    # U2 database operations
 │   └── utils/
-│       └── config_loader.py      # INI config loader
-├── data/                         # SQLite DB (gitignored)
-├── security_config.yaml          # Security settings template
+│       ├── config_loader.py      # INI config loader
+│       └── credential_store.py   # Credential helpers
+├── data/                         # SQLite DB — created at runtime (gitignored)
+├── security_config.yaml          # Security settings
 ├── unidata_config.ini            # U2 connection config (gitignored)
 ├── .env.example                  # Environment variable template
-├── pyproject.toml
-└── requirements.txt
+└── pyproject.toml
 ```
 
 ---
@@ -336,27 +366,25 @@ UOFastMCP/
 ## Troubleshooting
 
 ### 401 Unauthorized
-- Token missing or expired — get a new token at `/auth/login` or `POST /auth/token`
-- Check header format: `Bearer <jwt>` · `ApiKey <key>` · `Basic <base64(user:pass)>`
-- Basic auth: re-generate your token at `/auth/login` if you changed your password
+- Get a new token at `/auth/login`
+- Header format: `Basic <base64(user:pass)>` or `Bearer <jwt>`
 
 ### 403 Forbidden
-- User's role doesn't have the required permission
+- User's role lacks the required permission
+- Admin UI → Roles → verify permissions assigned to the role
 - Check Audit Logs for `result_status=denied` entries
-- Admin UI → Roles → verify permissions assigned to user's role
 
 ### Server won't start
 - `JWT_SECRET_KEY` not set — required at startup
-- Port 8000 in use — use `--port 8001`
-- Missing `data/` directory — the server creates it automatically
+- Port 8000 in use — `uvicorn uofast_mcp.app:app --port 8001`
 
 ### Database errors
 - Delete `data/security.db` and restart to reset (loses all users/audit logs)
 
 ### U2 connection fails
-- Verify UniData server is reachable: `ping <host>`
-- Check credentials in `unidata_config.ini` or environment variables
-- Use `add_connection` tool from Claude to test manually
+- Verify host reachable: `ping <host>`
+- Check credentials in `unidata_config.ini` or env vars
+- Use `add_connection` tool from Claude to test on-demand
 
 ---
 
