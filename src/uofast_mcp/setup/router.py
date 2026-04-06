@@ -375,8 +375,7 @@ async def setup_root():
 async def welcome_get(request: Request):
     already_done = await _is_already_configured()
     prereqs = _check_prerequisites()
-    return templates.TemplateResponse("welcome.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "welcome.html", {
         "step": 1,
         "already_configured": already_done,
         "prereqs": prereqs,
@@ -388,15 +387,14 @@ async def welcome_get(request: Request):
 async def security_get(request: Request):
     already_done = await _is_already_configured()
     if already_done and not request.session.get("setup_complete"):
-        return templates.TemplateResponse("welcome.html", {
-            "request": request, "step": 1,
+        return templates.TemplateResponse(request, "welcome.html", {
+            "step": 1,
             "already_configured": True,
             "prereqs": [], "all_ok": True,
         })
     if "setup_jwt_secret" not in request.session:
         request.session["setup_jwt_secret"] = secrets.token_hex(32)
-    return templates.TemplateResponse("security.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "security.html", {
         "step": 2,
         "jwt_secret": request.session["setup_jwt_secret"],
         "errors": {},
@@ -414,8 +412,7 @@ async def security_post(request: Request):
     form = dict(raw_form)
     errors = _validate_security_form(form)
     if errors:
-        return templates.TemplateResponse("security.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "security.html", {
             "step": 2,
             "jwt_secret": form.get("jwt_secret", request.session.get("setup_jwt_secret", "")),
             "errors": errors,
@@ -434,14 +431,13 @@ async def security_post(request: Request):
 async def connection_get(request: Request):
     already_done = await _is_already_configured()
     if already_done and not request.session.get("setup_complete"):
-        return templates.TemplateResponse("welcome.html", {
-            "request": request, "step": 1,
+        return templates.TemplateResponse(request, "welcome.html", {
+            "step": 1,
             "already_configured": True, "prereqs": [], "all_ok": True,
         })
     if not request.session.get("setup_security_done"):
         return RedirectResponse("/setup/security", status_code=302)
-    return templates.TemplateResponse("connection.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "connection.html", {
         "step": 3,
         "errors": {},
         "form": _connection_defaults(),
@@ -466,8 +462,7 @@ async def connection_post(request: Request):
 
     errors = _validate_connection_form(form)
     if errors:
-        return templates.TemplateResponse("connection.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "connection.html", {
             "step": 3,
             "errors": errors,
             "form": form,
@@ -551,8 +546,8 @@ async def complete_get(request: Request):
     already_done = await _is_already_configured()
     # Allow if we just finished the wizard in this session
     if already_done and not request.session.get("setup_complete") and not request.session.get("setup_security_done"):
-        return templates.TemplateResponse("welcome.html", {
-            "request": request, "step": 1,
+        return templates.TemplateResponse(request, "welcome.html", {
+            "step": 1,
             "already_configured": True, "prereqs": [], "all_ok": True,
         })
     if not request.session.get("setup_security_done"):
@@ -560,8 +555,7 @@ async def complete_get(request: Request):
 
     result = await _run_setup(request)
     request.session["setup_complete"] = True
-    return templates.TemplateResponse("complete.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "complete.html", {
         "step": 4,
         "result": result,
     })
@@ -583,8 +577,7 @@ async def client_setup_get(request: Request):
     base_url = str(request.base_url).rstrip("/")
     configs = _build_client_configs(base_url, admin_username, admin_password)
 
-    return templates.TemplateResponse("client_setup.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "client_setup.html", {
         "step": 5,
         **configs,
     })

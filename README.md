@@ -22,66 +22,123 @@ Provides JWT authentication, role-based access control (RBAC), audit logging, an
 
 ---
 
-## Quick Start
+## Requirements
 
-### 1. Install
+- **Python 3.11 or 3.12** — [download from python.org](https://www.python.org/downloads/)
+  - During installation on Windows, check **"Add Python to PATH"**
+  - Verify: `python --version`
+
+---
+
+## First-Time Installation
+
+### 1. Create a local folder and virtual environment
+
+**Windows:**
+```cmd
+mkdir C:\UOFastMCP
+cd C:\UOFastMCP
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+**macOS / Linux:**
+```bash
+mkdir ~/UOFastMCP
+cd ~/UOFastMCP
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Your prompt will change to show `(.venv)` — the virtual environment is active and packages will install into this folder only.
+
+### 2. Install UOFastMCP
 
 ```bash
 pip install uofast-mcp
-# or from source:
-git clone https://github.com/RokiPark/UOFastMCP.git
-cd UOFastMCP
-pip install -e .
 ```
 
-### 2. Set required environment variables
+> **Requires v1.0.2 or later.** Earlier versions have a Jinja2 compatibility bug that causes errors on the `/setup` page. If you have an older version installed, upgrade with:
+> ```bash
+> pip install --upgrade uofast-mcp
+> ```
 
+To verify the install:
 ```bash
-# Windows
-set JWT_SECRET_KEY=your-long-random-secret-here
-set INITIAL_ADMIN_PASSWORD=YourStrongPassword123!
+uofast-mcp --help
+```
 
-# macOS/Linux
-export JWT_SECRET_KEY=your-long-random-secret-here
+> **Returning after a restart?** Re-activate the virtual environment first:
+> - Windows: `C:\UOFastMCP\.venv\Scripts\activate`
+> - macOS/Linux: `source ~/UOFastMCP/.venv/bin/activate`
+
+### 3. Set the admin password (optional but recommended)
+
+On first startup, if no password is configured, the default admin password is **`changeme123!`**
+
+To set your own password before first run:
+
+**Windows:**
+```cmd
+set INITIAL_ADMIN_PASSWORD=YourStrongPassword123!
+```
+
+**macOS / Linux:**
+```bash
 export INITIAL_ADMIN_PASSWORD=YourStrongPassword123!
 ```
 
-Generate a secure secret:
+> This password is only used once — on first startup to seed the `admin` account. Change it immediately after login via **Admin UI → Users** if you used the default.
+
+---
+
+## Quick Start
+
+### 1. Set the JWT secret key (required)
+
+**Windows:**
+```cmd
+set JWT_SECRET_KEY=your-long-random-secret-here
+```
+
+**macOS / Linux:**
+```bash
+export JWT_SECRET_KEY=your-long-random-secret-here
+```
+
+Generate a secure value:
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-### 3. Configure your U2 connection
-
-Copy and edit the config file:
-```bash
-cp unidata_config.ini.example unidata_config.ini   # then fill in your host/credentials
-# or use environment variables — see Environment Variables section below
-```
-
-### 4. Start the server
+### 2. Start the server
 
 ```bash
-# via console script:
 uofast-mcp
-
-# or directly:
-uvicorn uofast_mcp.app:app --reload --port 8000
 ```
 
 On first startup the server will:
 - Create `data/security.db` (SQLite)
 - Seed default roles, permissions, and the `admin` user
 
-### 5. Verify
+### 3. Open the setup wizard
+
+Go to **http://localhost:8000/setup** — the wizard guides you through:
+- Verifying prerequisites
+- Setting JWT secret and admin password
+- Configuring your U2 connection
+- Generating your Claude connection command
+
+### 4. Verify
 
 ```
 GET http://localhost:8000/health
 → {"status": "ok", "service": "uofast-mcp"}
 ```
 
-Open the admin UI: **http://localhost:8000/admin**
-Login with `admin` / `<INITIAL_ADMIN_PASSWORD>`
+**Default credentials (first run):**
+- Username: `admin`
+- Password: `changeme123!` ← change this immediately, or set `INITIAL_ADMIN_PASSWORD` before first startup
 
 ---
 

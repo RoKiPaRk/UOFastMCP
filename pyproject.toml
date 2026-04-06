@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uofast-mcp"
-version = "1.0.0"
+version = "1.0.5"
 description = "Enterprise MCP server for U2 UniData/UniVerse — JWT auth, RBAC, audit logging, admin UI"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 license = {file = "LICENSE"}
 authors = [
     {name = "RokiPark"}
@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Framework :: FastAPI",
     "Typing :: Typed",
 ]
@@ -39,7 +40,7 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "python-multipart>=0.0.9",
-    "jinja2>=3.1.0",
+    "jinja2>=3.1.6",
     "itsdangerous>=2.0.0",
     # Auth & security
     "python-jose[cryptography]>=3.3.0",

@@ -5,6 +5,36 @@
 All notable changes to this project will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.5] — 2026-04-05
+
+### Fixed
+- Updated all `TemplateResponse` calls to Starlette 0.36+ API: `request` is now the first positional argument, not a key inside the context dict. This was the root cause of `AttributeError: 'dict' object has no attribute 'split'` on fresh installs with current Starlette (0.36+).
+- Removed Jinja2 cache workarounds — no longer needed with correct Starlette API usage.
+
+### Added
+- Python 3.13 support confirmed; added to classifiers
+
+## [1.0.4] — 2026-04-05
+
+### Fixed
+- Attempted `cache_size=0` via Jinja2 `Environment` — caused `unexpected keyword argument` error on Starlette's `Jinja2Templates(env=...)` path
+
+## [1.0.3] — 2026-04-05
+
+### Fixed
+- Set `cache_size=0` on Jinja2Templates — partially fixed but caused `unexpected keyword argument` error on some Starlette versions
+
+## [1.0.2] — 2026-04-05
+
+### Fixed
+- Pinned `jinja2>=3.1.6` in package dependencies (partial fix — did not help users with 3.1.5 already installed)
+
+## [1.0.1] — 2026-04-04
+
+### Changed
+- Updated PyPI metadata: description, keywords, classifiers, `Framework :: FastAPI`
+- Added `[project.optional-dependencies] dev` extras for contributors
+
 ## [1.0.0] — 2026-04-04
 
 ### Added
