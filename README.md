@@ -3,7 +3,7 @@
 Enterprise Model Context Protocol (MCP) server for U2 UniData/UniVerse databases.
 Provides JWT authentication, role-based access control (RBAC), audit logging, and a web-based security admin UI.
 
-**Developer:** [RokiPark](https://github.com/RokiPark/UOFastMCP) · **License:** MIT · **Python:** 3.11+
+**Developer:** [RokiPark](https://github.com/RoKiPaRk/UOFastMCP) · **License:** MIT · **Python:** 3.11+
 
 ---
 
@@ -449,4 +449,4 @@ UOFastMCP/
 
 MIT License — © 2025 RokiPark. All rights reserved.
 
-Developed by [RokiPark](https://github.com/RokiPark/UOFastMCP).
+Developed by [RokiPark](https://github.com/RoKiPaRk/UOFastMCP).

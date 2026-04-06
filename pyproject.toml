@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = {file = "LICENSE"}
 authors = [
-    {name = "RokiPark"}
+    {name = "RoKiPaRk"}
 ]
 keywords = [
     "mcp", "model-context-protocol", "unidata", "universe", "u2",
@@ -57,9 +57,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/RokiPark/UOFastMCP"
-Repository = "https://github.com/RokiPark/UOFastMCP.git"
-"Bug Tracker" = "https://github.com/RokiPark/UOFastMCP/issues"
+Homepage = "https://github.com/RoKiPaRk/UOFastMCP"
+Repository = "https://github.com/RoKiPaRk/UOFastMCP.git"
+"Bug Tracker" = "https://github.com/RoKiPaRk/UOFastMCP/issues"
 
 [project.optional-dependencies]
 dev = [

@@ -5,7 +5,7 @@
 ## Setup
 
 ```bash
-git clone https://github.com/RokiPark/UOFastMCP.git
+git clone https://github.com/RoKiPaRk/UOFastMCP.git
 cd UOFastMCP
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
