@@ -5,6 +5,13 @@
 All notable changes to this project will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.6] — 2026-04-06
+
+### Fixed
+- Rewrote setup/router.py from scratch — clean implementation with correct
+  Starlette 0.36+ `TemplateResponse(request, name, context)` API on all 10 calls.
+  Removed all Jinja2 cache workarounds that were causing cascading errors.
+
 ## [1.0.5] — 2026-04-05
 
 ### Fixed

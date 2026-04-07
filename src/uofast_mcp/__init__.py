@@ -11,7 +11,7 @@ Provides tools for:
 - Custom UniQuery commands
 """
 
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 __author__ = "RokiPark"
 __copyright__ = "Copyright (c) 2025 RokiPark"
 
