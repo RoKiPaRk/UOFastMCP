@@ -8,9 +8,10 @@ from __future__ import annotations
 import logging
 
 import bcrypt
-from sqladmin import ModelView
+from sqladmin import ModelView, BaseView, expose
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
+from starlette.responses import RedirectResponse
 from wtforms import PasswordField
 from wtforms.validators import Optional
 
@@ -124,10 +125,21 @@ class AuditLogAdmin(ModelView, model=AuditLog):
     can_export = True
 
 
+class SetupView(BaseView):
+    name = "Server Setup"
+    icon = "fa-solid fa-gear"
+    identity = "server-config"  # avoids /admin/setup path conflict
+
+    @expose("/", methods=["GET"])
+    async def index(self, request: Request):
+        return RedirectResponse("/admin/setup/welcome")
+
+
 ALL_VIEWS = [
     UserAdmin,
     RoleAdmin,
     PermissionAdmin,
     RolePermissionAdmin,
     AuditLogAdmin,
+    SetupView,
 ]

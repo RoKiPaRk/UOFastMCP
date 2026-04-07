@@ -22,7 +22,7 @@ Or via config file (Claude Desktop / VSCode):
       }
     }
 
-Visit http://localhost:8000/auth/login to get your ready-to-use command.
+Visit http://localhost:8000/admin/setup to configure on first run (login: admin / changeme123!).
 """
 from __future__ import annotations
 
@@ -34,7 +34,14 @@ from pathlib import Path
 # Must run before any os.getenv() calls so the values are visible.
 try:
     from dotenv import load_dotenv
-    load_dotenv(Path(".env"), override=False)  # override=False: real env vars win
+    load_dotenv(Path(".env"), override=False, encoding="utf-8")
+except UnicodeDecodeError:
+    # .env file has non-UTF-8 bytes (e.g. Windows-1252 chars) — retry with cp1252
+    try:
+        from dotenv import load_dotenv  # noqa: F811
+        load_dotenv(Path(".env"), override=False, encoding="cp1252")
+    except Exception:
+        pass
 except ImportError:
     pass  # python-dotenv not installed — env vars must be set manually
 
@@ -44,11 +51,11 @@ from sqladmin import Admin
 from starlette.middleware.sessions import SessionMiddleware
 
 from .admin.router import auth_router, router as admin_router
+from .admin.setup_router import router as admin_setup_router
 from .admin.ui import AdminAuth, ALL_VIEWS
 from .security.database import engine, init_db
 from .security.middleware import AuthMiddleware
 from .server import app as mcp_server, initialize_server, connection_manager
-from .setup.router import router as setup_router
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +82,8 @@ def create_app() -> FastAPI:
     # --- Auth middleware: validates Basic Auth on all non-public paths ---
     fast_app.add_middleware(AuthMiddleware)
 
-    # --- Setup wizard (public — no auth required) ---
-    fast_app.include_router(setup_router)
+    # --- Admin setup wizard (requires admin session) ---
+    fast_app.include_router(admin_setup_router)
 
     # --- Auth REST endpoints (public) ---
     fast_app.include_router(auth_router)

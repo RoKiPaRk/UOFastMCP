@@ -5,6 +5,18 @@
 All notable changes to this project will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.0] — 2026-04-06
+
+### Changed
+- Setup wizard moved from public `/setup` to `/admin/setup` — requires admin
+  login first, so configuration is always behind authentication
+- Fresh installs now seed `admin` / `changeme123!` automatically on first
+  startup; change the password immediately via `/admin/setup`
+- Removed `/setup` public path bypass from `AuthMiddleware`
+
+### Removed
+- Public `/setup` wizard (replaced by `/admin/setup`)
+
 ## [1.0.9] — 2026-04-06
 
 ### Fixed

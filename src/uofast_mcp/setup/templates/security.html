@@ -4,7 +4,7 @@
 <h5 class="fw-bold mb-1">Security Settings</h5>
 <p class="text-muted mb-4">Generate an application secret and create the initial admin account.</p>
 
-<form method="POST" action="/setup/security" id="secForm" novalidate>
+<form method="POST" action="/admin/setup/security" id="secForm" novalidate>
 
   <!-- Application Secret Key -->
   <div class="mb-4">
@@ -78,7 +78,7 @@
   {% endif %}
 
   <div class="d-flex gap-2">
-    <a href="/setup/welcome" class="btn btn-outline-secondary">
+    <a href="/admin/setup/welcome" class="btn btn-outline-secondary">
       <i class="fa fa-arrow-left me-1"></i> Back
     </a>
     <button type="submit" class="btn btn-primary flex-grow-1">

@@ -61,7 +61,7 @@ class AuthMiddleware:
         path: str = scope.get("path", "")
 
         # Allow public paths through without auth
-        if path in _PUBLIC_PATHS or path.startswith("/admin") or path.startswith("/setup"):
+        if path in _PUBLIC_PATHS or path.startswith("/admin"):
             await self.app(scope, receive, send)
             return
 

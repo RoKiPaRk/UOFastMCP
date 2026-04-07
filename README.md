@@ -17,7 +17,7 @@ Provides JWT authentication, role-based access control (RBAC), audit logging, an
 | Audit logging | SQLite log of every tool call (user, tool, params, status, IP, timestamp) |
 | Admin UI | Web UI at `/admin` — manage users, roles, permissions, audit logs |
 | User self-service | Login page at `/auth/login` — returns ready-to-use `claude mcp add` command |
-| Setup wizard | First-run wizard at `/setup` — guided configuration via browser |
+| Setup wizard | First-run configuration at `/admin/setup` — accessible after admin login |
 | ORM support | `uofast-orm` package — typed model classes for U2 files |
 
 ---
@@ -58,11 +58,6 @@ Your prompt will change to show `(.venv)` — the virtual environment is active 
 pip install uofast-mcp
 ```
 
-> **Requires v1.0.2 or later.** Earlier versions have a Jinja2 compatibility bug that causes errors on the `/setup` page. If you have an older version installed, upgrade with:
-> ```bash
-> pip install --upgrade uofast-mcp
-> ```
-
 To verify the install:
 ```bash
 uofast-mcp --help
@@ -72,11 +67,9 @@ uofast-mcp --help
 > - Windows: `C:\UOFastMCP\.venv\Scripts\activate`
 > - macOS/Linux: `source ~/UOFastMCP/.venv/bin/activate`
 
-### 3. Set the admin password (optional but recommended)
+### 3. (Optional) Override the default admin password
 
-On first startup, if no password is configured, the default admin password is **`changeme123!`**
-
-To set your own password before first run:
+The default admin password is **`changeme123!`**. To use a different password on first startup, set the environment variable before starting the server for the first time:
 
 **Windows:**
 ```cmd
@@ -88,7 +81,7 @@ set INITIAL_ADMIN_PASSWORD=YourStrongPassword123!
 export INITIAL_ADMIN_PASSWORD=YourStrongPassword123!
 ```
 
-> This password is only used once — on first startup to seed the `admin` account. Change it immediately after login via **Admin UI → Users** if you used the default.
+> You can also change the password after first login via `/admin/setup`.
 
 ---
 
@@ -121,11 +114,15 @@ On first startup the server will:
 - Create `data/security.db` (SQLite)
 - Seed default roles, permissions, and the `admin` user
 
-### 3. Open the setup wizard
+### 3. Log in to Admin and run Setup
 
-Go to **http://localhost:8000/setup** — the wizard guides you through:
+Go to **http://localhost:8000/admin** and log in with:
+- Username: `admin`
+- Password: `changeme123!`
+
+Then navigate to **Setup** (top menu) at **http://localhost:8000/admin/setup** — the wizard guides you through:
 - Verifying prerequisites
-- Setting JWT secret and admin password
+- Setting JWT secret and changing admin password
 - Configuring your U2 connection
 - Generating your Claude connection command
 
@@ -138,7 +135,7 @@ GET http://localhost:8000/health
 
 **Default credentials (first run):**
 - Username: `admin`
-- Password: `changeme123!` ← change this immediately, or set `INITIAL_ADMIN_PASSWORD` before first startup
+- Password: `changeme123!` ← change this immediately via `/admin/setup`
 
 ---
 

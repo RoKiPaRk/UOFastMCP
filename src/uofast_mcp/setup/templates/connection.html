@@ -7,7 +7,7 @@
   This will be saved to <code>unidata_config.ini</code>.
 </p>
 
-<form method="POST" action="/setup/connection" id="connForm">
+<form method="POST" action="/admin/setup/connection" id="connForm">
 
   <!-- Row: Connection Name + Port -->
   <div class="row g-3 mb-3">
@@ -161,7 +161,7 @@
 
   <!-- Navigation buttons -->
   <div class="d-flex gap-2">
-    <a href="/setup/security" class="btn btn-outline-secondary">
+    <a href="/admin/setup/security" class="btn btn-outline-secondary">
       <i class="fa fa-arrow-left me-1"></i> Back
     </a>
     <button type="submit" class="btn btn-primary flex-grow-1">
@@ -203,7 +203,7 @@ async function testConnection() {
   };
 
   try {
-    const resp = await fetch('/setup/test-connection', {
+    const resp = await fetch('/admin/setup/test-connection', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
