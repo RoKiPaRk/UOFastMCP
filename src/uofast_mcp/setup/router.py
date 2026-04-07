@@ -262,6 +262,15 @@ async def _run_setup(request: Request) -> dict:
     result["env_file_content"] = env_content
 
     sess.pop("setup_conn_password", None)
+
+    # Reload connection config into the running server so connections are
+    # available immediately without a restart.
+    try:
+        from ..server import initialize_server
+        initialize_server()
+    except Exception as exc:
+        result["errors"].append(f"Note: server connection reload failed — restart to apply: {exc}")
+
     return result
 
 

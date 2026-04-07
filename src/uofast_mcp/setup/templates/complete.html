@@ -89,26 +89,32 @@
 </div>
 {% endif %}
 
+<!-- Restart notice -->
+<div class="alert alert-info mb-3 d-flex align-items-start gap-2">
+  <i class="fa fa-rotate-right fa-lg mt-1 flex-shrink-0"></i>
+  <div>
+    <strong>Restart required</strong> — the <code>.env</code> file has been written to your working directory.
+    Stop the server and start it again so the new <code>JWT_SECRET_KEY</code> takes effect.
+    U2 connections have been reloaded automatically.
+  </div>
+</div>
+
 <!-- Next steps -->
 <h6 class="fw-semibold mb-2">Next Steps</h6>
 <ol class="mb-4">
   <li class="mb-1">
-    Copy the <code>.env</code> content above (also written to <code>.env</code> in the project root)
+    First click <strong>Step 5</strong> below to save your client connection configs
   </li>
   <li class="mb-1">
-    Set the environment variables before starting the server:
-    <code>JWT_SECRET_KEY</code> and <code>INITIAL_ADMIN_PASSWORD</code>
-  </li>
-  <li class="mb-1">
-    Restart the server so the new JWT secret takes effect:
+    Then restart the server from your working directory:
     <br>
-    <code class="bg-light px-2 py-1 rounded border d-inline-block mt-1"
-          style="font-size:.82rem">
-      uvicorn src.uofast_mcp.app:app --host 0.0.0.0 --port 8000
-    </code>
+    <code class="bg-light px-2 py-1 rounded border d-inline-block mt-1" style="font-size:.82rem">uofast-mcp</code>
+    <span class="text-muted small ms-2">
+      (the .env file is loaded automatically on startup)
+    </span>
   </li>
   <li class="mb-1">
-    Click <strong>Step 5</strong> below to get your client connection configs
+    Log in to the <strong>Admin UI</strong> with your new admin credentials
   </li>
 </ol>
 

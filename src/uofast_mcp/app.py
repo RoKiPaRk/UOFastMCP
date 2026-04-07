@@ -28,6 +28,15 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
+
+# Auto-load .env if present (written by setup wizard, or manually created).
+# Must run before any os.getenv() calls so the values are visible.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(".env"), override=False)  # override=False: real env vars win
+except ImportError:
+    pass  # python-dotenv not installed — env vars must be set manually
 
 from fastapi import FastAPI
 from mcp.server.sse import SseServerTransport

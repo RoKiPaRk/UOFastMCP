@@ -5,6 +5,20 @@
 All notable changes to this project will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.7] — 2026-04-06
+
+### Fixed
+- Auto-load `.env` at startup via `python-dotenv` — setup wizard writes `.env`;
+  server now reads it automatically on next start without manual env var steps
+- Reload U2 connections immediately after setup completes — no restart needed
+  to use the connection configured in the wizard
+- Fixed restart command in `complete.html` — was `uvicorn src.uofast_mcp.app:app`
+  (dev path), now correctly shows `uofast-mcp` (pip console script)
+- Improved next-steps UI in `complete.html` to reflect correct fresh-install flow
+
+### Added
+- `python-dotenv>=1.0.0` dependency
+
 ## [1.0.6] — 2026-04-06
 
 ### Fixed
