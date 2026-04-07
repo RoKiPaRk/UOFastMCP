@@ -128,7 +128,17 @@ async def _seed_admin_user(session: AsyncSession) -> None:
     if existing:
         return
 
-    admin_password = os.getenv("INITIAL_ADMIN_PASSWORD", "changeme123!")
+    # Only auto-seed if INITIAL_ADMIN_PASSWORD is explicitly set.
+    # Without it, skip seeding so the setup wizard at /setup can run on a
+    # fresh install. Users who want to skip the wizard should set this env var.
+    admin_password = os.getenv("INITIAL_ADMIN_PASSWORD")
+    if not admin_password:
+        logger.info(
+            "INITIAL_ADMIN_PASSWORD not set — skipping admin user seed. "
+            "Run the setup wizard at /setup to create the admin account."
+        )
+        return
+
     admin_role = await session.scalar(select(Role).where(Role.role_name == "admin"))
     if not admin_role:
         logger.warning("Admin role not found, skipping admin user seed")
@@ -141,6 +151,4 @@ async def _seed_admin_user(session: AsyncSession) -> None:
         status="active",
         role_id=admin_role.id,
     ))
-    logger.info(
-        "Seeded default admin user (password from INITIAL_ADMIN_PASSWORD env var)"
-    )
+    logger.info("Seeded admin user from INITIAL_ADMIN_PASSWORD env var")

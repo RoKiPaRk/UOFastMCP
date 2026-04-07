@@ -5,6 +5,16 @@
 All notable changes to this project will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.8] — 2026-04-06
+
+### Fixed
+- Fresh install no longer blocks setup wizard — `_seed_admin_user` now only
+  runs when `INITIAL_ADMIN_PASSWORD` is explicitly set. Without it, startup
+  creates the DB schema and roles but leaves admin creation to the wizard.
+  Previously, auto-seeding admin at startup with the default password caused
+  `_is_already_configured()` to return True immediately, showing "already
+  configured" on every fresh install.
+
 ## [1.0.7] — 2026-04-06
 
 ### Fixed
