@@ -5,6 +5,12 @@
 All notable changes to this project will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.9] — 2026-04-06
+
+### Fixed
+- Removed duplicate `{% endblock %}` at line 158 of `client_setup.html` that
+  caused `TemplateSyntaxError: Encountered unknown tag 'endblock'` on Step 5
+
 ## [1.0.8] — 2026-04-06
 
 ### Fixed
