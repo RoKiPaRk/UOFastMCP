@@ -110,15 +110,48 @@ def create_app() -> FastAPI:
 
     class _SseApp:
         async def __call__(self, scope, receive, send):
-            if scope.get("type") == "http":
-                # Starlette Mount appends the mount prefix ("/sse") to scope["root_path"].
-                # connect_sse uses root_path to build the client messages URL, so it would
-                # produce "/sse/messages" instead of "/messages".  Strip the prefix back.
-                scope = {**scope, "root_path": scope.get("root_path", "").removesuffix("/sse")}
-                async with sse_transport.connect_sse(scope, receive, send) as streams:
+            if scope.get("type") != "http":
+                return
+
+            # Strip the /sse mount prefix so connect_sse builds the correct
+            # /messages URL for clients (not /sse/messages).
+            scope = {**scope, "root_path": scope.get("root_path", "").removesuffix("/sse")}
+
+            # Serialise all writes to `send` so that our keep-alive task and
+            # the MCP SDK never interleave their SSE frames.
+            import asyncio
+            send_lock = asyncio.Lock()
+            response_started = asyncio.Event()
+
+            async def locked_send(message):
+                async with send_lock:
+                    await send(message)
+                if message.get("type") == "http.response.start":
+                    response_started.set()
+
+            async def _keepalive():
+                """Send an SSE comment every 30 s to prevent proxy/LB timeouts."""
+                await response_started.wait()
+                while True:
+                    await asyncio.sleep(30)
+                    try:
+                        async with send_lock:
+                            await send({
+                                "type": "http.response.body",
+                                "body": b": ping\n\n",
+                                "more_body": True,
+                            })
+                    except Exception:
+                        break  # client disconnected or send failed
+
+            heartbeat = asyncio.create_task(_keepalive())
+            try:
+                async with sse_transport.connect_sse(scope, receive, locked_send) as streams:
                     await mcp_server.run(
                         streams[0], streams[1], mcp_server.create_initialization_options()
                     )
+            finally:
+                heartbeat.cancel()
 
     class _MessagesApp:
         async def __call__(self, scope, receive, send):
