@@ -33,9 +33,10 @@ Server starts at **http://localhost:8000**
 1. Open **http://localhost:8000/admin**
 2. Log in: `admin` / `changeme123!`
 
-![Admin login](docs/screenshots/admin-login.png)
+![Admin login](docs/screenshots/UOFast_login.png)
 
 3. Click **Server Setup** in the left menu
+![Admin menu](docs/screenshots/UOFast_admin_login.png)
 4. Follow the 5-step wizard:
    - Check prerequisites
    - Set JWT secret + change admin password
@@ -43,7 +44,7 @@ Server starts at **http://localhost:8000**
    - Review generated `.env` and `unidata_config.ini`
    - Copy your Claude / VSCode / CLI connection config
 
-![Setup wizard — U2 connection step](docs/screenshots/setup-connection.png)
+![Setup wizard — U2 connection step](docs/screenshots/UOFastMCP_Unidata_connection.png)
 
 ---
 
@@ -87,12 +88,13 @@ Manage users and permissions at **http://localhost:8000/admin**.
 
 **http://localhost:8000/admin** — login with admin credentials.
 
-| Section | Purpose |
-|---|---|
-| Users | Create/edit users, assign roles |
-| Roles / Permissions | Manage RBAC |
-| Audit Logs | Every tool call logged — read-only |
-| Server Setup | Change password, JWT secret, U2 connection |
+| Section | URL | Purpose |
+|---|---|---|
+| Users | `/admin/user/list` | Create/edit users, assign roles |
+| Roles / Permissions | `/admin/role/list` | Manage RBAC |
+| Audit Logs | `/admin/auditlog/list` | Every tool call logged — read-only |
+| UniData Connections | `/admin/connections` | View `unidata_config.ini`, test connections live |
+| Server Setup | `/admin/setup` | Change password, JWT secret, U2 connection |
 
 ---
 
@@ -116,6 +118,7 @@ Manage users and permissions at **http://localhost:8000/admin**.
 | `GET/POST /auth/login` | None | Login page — returns ready-to-use connection config |
 | `POST /auth/provision` | Admin | Create user + return their connection command |
 | `GET /admin` | Admin session | Web admin UI |
+| `GET /admin/connections` | Admin session | View UniData connections from `unidata_config.ini` |
 | `GET /admin/setup` | Admin session | Server setup wizard |
 | `GET /docs` | None | Swagger UI |
 

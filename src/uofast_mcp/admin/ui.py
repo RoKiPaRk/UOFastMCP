@@ -125,12 +125,20 @@ class AuditLogAdmin(ModelView, model=AuditLog):
     can_export = True
 
 
+class ConnectionsView(BaseView):
+    name = "UniData Connections"
+    icon = "fa-solid fa-plug"
+
+    @expose("/unidata-connections", identity="unidata-connections", methods=["GET"])
+    async def index(self, request: Request):
+        return RedirectResponse("/admin/connections")
+
+
 class SetupView(BaseView):
     name = "Server Setup"
     icon = "fa-solid fa-gear"
-    identity = "server-config"  # avoids /admin/setup path conflict
 
-    @expose("/", methods=["GET"])
+    @expose("/server-config", identity="server-config", methods=["GET"])
     async def index(self, request: Request):
         return RedirectResponse("/admin/setup/welcome")
 
@@ -141,5 +149,6 @@ ALL_VIEWS = [
     PermissionAdmin,
     RolePermissionAdmin,
     AuditLogAdmin,
+    ConnectionsView,
     SetupView,
 ]

@@ -51,7 +51,7 @@ from sqladmin import Admin
 from starlette.middleware.sessions import SessionMiddleware
 
 from .admin.router import auth_router, router as admin_router
-from .admin.setup_router import router as admin_setup_router
+from .admin.setup_router import router as admin_setup_router, connections_router
 from .admin.ui import AdminAuth, ALL_VIEWS
 from .security.database import engine, init_db
 from .security.middleware import AuthMiddleware
@@ -84,6 +84,9 @@ def create_app() -> FastAPI:
 
     # --- Admin setup wizard (requires admin session) ---
     fast_app.include_router(admin_setup_router)
+
+    # --- UniData connections page (requires admin session) ---
+    fast_app.include_router(connections_router)
 
     # --- Auth REST endpoints (public) ---
     fast_app.include_router(auth_router)
@@ -160,6 +163,12 @@ def create_app() -> FastAPI:
 
     fast_app.mount("/sse", _SseApp())
     fast_app.mount("/messages", _MessagesApp())
+
+    # --- Root → Admin UI redirect ---
+    @fast_app.get("/")
+    async def root():
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse("/admin", status_code=302)
 
     # --- Health check (public) ---
     @fast_app.get("/health")

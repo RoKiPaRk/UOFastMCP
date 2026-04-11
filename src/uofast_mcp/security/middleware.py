@@ -37,6 +37,7 @@ _current_user_var: ContextVar[User | None] = ContextVar("current_user", default=
 
 # Paths that don't require authentication
 _PUBLIC_PATHS = frozenset({
+    "/",
     "/auth/login",
     "/health",
     "/favicon.ico",

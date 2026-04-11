@@ -34,6 +34,8 @@ from ..security.database import AsyncSessionLocal, init_db
 from ..security.models import Role, User
 
 router = APIRouter(prefix="/admin/setup", tags=["admin-setup"])
+connections_router = APIRouter(prefix="/admin/connections", tags=["admin-connections"])
+
 # Reuse setup wizard templates (same Bootstrap 5 card layout)
 templates = Jinja2Templates(
     directory=str(Path(__file__).parent.parent / "setup" / "templates")
@@ -487,3 +489,72 @@ async def client_setup_get(request: Request):
         "step": 5,
         **configs,
     })
+
+
+# ---------------------------------------------------------------------------
+# Connections page — read unidata_config.ini and display
+# ---------------------------------------------------------------------------
+
+def _read_connections_page_data() -> dict:
+    """Parse unidata_config.ini and return display-ready data."""
+    from ..utils.credential_store import is_encrypted
+
+    ini_path = Path("unidata_config.ini")
+
+    if not ini_path.exists():
+        return {
+            "ini_found": False,
+            "ini_path": str(ini_path.resolve()),
+            "server": {},
+            "connections": {},
+            "encryption_salt": None,
+        }
+
+    config = configparser.ConfigParser()
+    config.read(ini_path)
+
+    # Server settings
+    server = {
+        "default_connection": config.get("server", "default_connection", fallback="—"),
+        "min_connections": config.get("server", "min_connections", fallback="0"),
+        "max_connections": config.get("server", "max_connections", fallback="0"),
+        "log_level": config.get("server", "log_level", fallback="INFO"),
+    }
+
+    # Encryption salt (display prefix only — never expose the full salt)
+    encryption_salt = None
+    if config.has_section("encryption"):
+        encryption_salt = config.get("encryption", "salt", fallback=None)
+
+    # Connections — mask password, flag encrypted vs plaintext
+    connections = {}
+    for section in config.sections():
+        if not section.startswith("connection:"):
+            continue
+        name = section.split(":", 1)[1]
+        raw_pw = config.get(section, "password", fallback="")
+        connections[name] = {
+            "host": config.get(section, "host", fallback=""),
+            "port": config.getint(section, "port", fallback=31438),
+            "username": config.get(section, "username", fallback=""),
+            "account": config.get(section, "account", fallback=""),
+            "service": config.get(section, "service", fallback="udcs"),
+            "auto_connect": config.getboolean(section, "auto_connect", fallback=False),
+            "password_encrypted": is_encrypted(raw_pw),
+        }
+
+    return {
+        "ini_found": True,
+        "ini_path": str(ini_path.resolve()),
+        "server": server,
+        "connections": connections,
+        "encryption_salt": encryption_salt,
+    }
+
+
+@connections_router.get("")
+async def connections_page(request: Request):
+    if not _is_logged_in(request):
+        return RedirectResponse(_LOGIN_REDIRECT, status_code=302)
+    data = _read_connections_page_data()
+    return templates.TemplateResponse(request, "connections.html", data)
