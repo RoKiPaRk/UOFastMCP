@@ -36,7 +36,7 @@ Server starts at **http://localhost:8000**
 ![Admin login](docs/screenshots/UOFast_login.png)
 
 3. Click **Server Setup** in the left menu
-![Admin menu](docs/screenshots/UOFast_admin_login.png)
+![Admin menu](docs/screenshots/UOFastMCP_admin_login.png)
 4. Follow the 5-step wizard:
    - Check prerequisites
    - Set JWT secret + change admin password
