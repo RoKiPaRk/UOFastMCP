@@ -2,17 +2,28 @@
 UOFast MCP Server — FastAPI Application Factory
 ================================================
 
-Starts the MCP server over HTTP/SSE transport with HTTP Basic Auth,
+Starts the MCP server over both HTTP and SSE transports with Basic Auth,
 RBAC enforcement, audit logging, and a SQLAdmin web UI.
 
 Entry point:
     uvicorn src.uofast_mcp.app:app --host 0.0.0.0 --port 8000
 
-Connect via CLI (easiest):
-    claude mcp add --transport sse UOFastMCP http://localhost:8000/sse \\
+── Claude Code CLI / VSCode extension (recommended — HTTP transport) ──
+    claude mcp add UOFastMCP http://localhost:8000/mcp \\
       --header "Authorization: Basic <base64-of-user:pass>"
 
-Or via config file (Claude Desktop / VSCode):
+    .mcp.json:
+    {
+      "mcpServers": {
+        "UOFastMCP": {
+          "type": "http",
+          "url": "http://localhost:8000/mcp",
+          "headers": { "Authorization": "Basic <base64-of-user:pass>" }
+        }
+      }
+    }
+
+── Claude Desktop / legacy SSE clients ──
     {
       "mcpServers": {
         "UOFastMCP": {
@@ -22,7 +33,7 @@ Or via config file (Claude Desktop / VSCode):
       }
     }
 
-Visit http://localhost:8000/admin/setup to configure on first run (login: admin / changeme123!).
+Visit http://localhost:8000/setup to configure on first run.
 """
 from __future__ import annotations
 
@@ -45,8 +56,12 @@ except UnicodeDecodeError:
 except ImportError:
     pass  # python-dotenv not installed — env vars must be set manually
 
+from contextlib import asynccontextmanager
+
+import anyio
 from fastapi import FastAPI
 from mcp.server.sse import SseServerTransport
+from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from sqladmin import Admin
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -58,6 +73,10 @@ from .security.middleware import AuthMiddleware
 from .server import app as mcp_server, initialize_server, connection_manager
 
 logger = logging.getLogger(__name__)
+
+
+# Session manager for streamable HTTP transport (shared across requests)
+_http_session_manager = StreamableHTTPSessionManager(mcp_server)
 
 
 def create_app() -> FastAPI:
@@ -164,6 +183,15 @@ def create_app() -> FastAPI:
     fast_app.mount("/sse", _SseApp())
     fast_app.mount("/messages", _MessagesApp())
 
+    # --- MCP Streamable HTTP Transport (Claude Code VSCode / modern clients) ---
+    # AuthMiddleware already guards this path; /mcp is NOT in _PUBLIC_PATHS.
+    class _HttpMcpApp:
+        async def __call__(self, scope, receive, send):
+            if scope.get("type") == "http":
+                await _http_session_manager.handle_request(scope, receive, send)
+
+    fast_app.mount("/mcp", _HttpMcpApp())
+
     # --- Root → Admin UI redirect ---
     @fast_app.get("/")
     async def root():
@@ -175,20 +203,26 @@ def create_app() -> FastAPI:
     async def health():
         return {"status": "ok", "service": "uofast-mcp"}
 
-    # --- Lifecycle ---
-    @fast_app.on_event("startup")
-    async def startup():
+    # --- Lifecycle (lifespan keeps the HTTP session manager task group alive) ---
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
         logger.info("Initialising security database...")
         await init_db()
         logger.info("Initialising UniData connections...")
         initialize_server()
         logger.info("UOFast MCP Server ready.")
-
-    @fast_app.on_event("shutdown")
-    async def shutdown():
+        async with anyio.create_task_group() as tg:
+            async def _run_http_manager():
+                async with _http_session_manager.run():
+                    await anyio.sleep_forever()
+            tg.start_soon(_run_http_manager)
+            yield
+            tg.cancel_scope.cancel()
         logger.info("Shutting down — closing all UniData connections...")
         if connection_manager:
             connection_manager.close_all_connections()
+
+    fast_app.router.lifespan_context = lifespan
 
     return fast_app
 

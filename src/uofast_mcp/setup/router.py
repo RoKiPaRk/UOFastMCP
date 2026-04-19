@@ -275,35 +275,41 @@ async def _run_setup(request: Request) -> dict:
 
 
 def _build_client_configs(base_url: str, admin_username: str, admin_password: str) -> dict:
-    sse_url = f"{base_url.rstrip('/')}/sse"
+    base = base_url.rstrip("/")
+    http_url = f"{base}/mcp"
+    sse_url  = f"{base}/sse"
     basic_token = base64.b64encode(f"{admin_username}:{admin_password}".encode()).decode()
+    auth_header = f"Basic {basic_token}"
 
-    claude_desktop_config = json.dumps({
+    # Claude Code CLI / VSCode extension — streamable HTTP (recommended)
+    claude_code_config = json.dumps({
         "mcpServers": {
             "UOFastMCP": {
-                "url": sse_url,
-                "headers": {"Authorization": f"Basic {basic_token}"},
+                "type": "http",
+                "url": http_url,
+                "headers": {"Authorization": auth_header},
             }
         }
     }, indent=2)
 
-    vscode_config = json.dumps({
-        "servers": {
+    # Claude Desktop — still uses SSE
+    claude_desktop_config = json.dumps({
+        "mcpServers": {
             "UOFastMCP": {
-                "type": "sse",
                 "url": sse_url,
-                "headers": {"Authorization": f"Basic {basic_token}"},
+                "headers": {"Authorization": auth_header},
             }
         }
     }, indent=2)
 
     return {
+        "http_url": http_url,
         "sse_url": sse_url,
         "basic_token": basic_token,
+        "claude_code_config": claude_code_config,
         "claude_desktop_config": claude_desktop_config,
-        "vscode_config": vscode_config,
-        "cli_command": f'claude mcp add --transport sse UOFastMCP {sse_url} --header "Authorization: Basic {basic_token}"',
-        "curl_command": f'curl -H "Authorization: Basic {basic_token}" {base_url.rstrip("/")}/health',
+        "cli_command": f'claude mcp add UOFastMCP {http_url} --header "Authorization: Basic {basic_token}"',
+        "curl_command": f'curl -H "Authorization: Basic {basic_token}" {base}/health',
         "admin_username": admin_username,
     }
 
